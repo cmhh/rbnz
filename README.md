@@ -1,6 +1,6 @@
 # Create a Database and Data Service of RBNZ Statistics
 
-Data on the [Reserve Bank of New Zealand](https://www.rbnz.govt.nz/statistics) website can be a little awkward to source and use.  First, all data is stored in Excel spreasheets which aren't directly machine readable.  But even then the data isn't easily used because the files themselves, due to the way they're hosted, cannot be directly downloaded easily in tools such as R or Python.  For example, the following R command will fail outright (as will `curl` and `wget`):
+Data on the [Reserve Bank of New Zealand](https://www.rbnz.govt.nz/statistics) website can be a little awkward to source and use.  First, all data is stored in Excel spreasheets which aren't directly machine readable.  But even then, the data isn't easily used because the files themselves, due to the way they're hosted, cannot be directly downloaded in tools such as R or Python.  For example, the following R command will fail outright (as will `curl` and `wget`):
 
 ```r
 download.file(
@@ -9,7 +9,7 @@ download.file(
 )
 ```
 
-This repo includes a simple-ish Scala library which has entrypoints which:
+This repo includes a simple(-ish) Scala library which has entry-points which:
 
 * download all Excel files listed on the [RBNZ statistics page](https://www.rbnz.govt.nz/statistics)
 * import most Excel files and output as a SQLite database
@@ -22,7 +22,7 @@ Note that Excel files will successfully import if they:
 * data in `Data` tab must start in row 6, with series IDs in row 5
 * `Series Definitions` tab must have 5 columns with header row
 
-The resulting database is basic, with the following schema:
+The resulting database is simple, with the following schema:
 
 ![](img/relationships.real.large.png)
 
@@ -43,7 +43,7 @@ target/scala-2.13/rbnz.jar
 
 ## Selenium / Chrome / Chromedriver
 
-The program uses Selenium webdriver, and assumes Chrome and [chromedriver](https://chromedriver.chromium.org/) are available, and working correctly.  One easy way to ensure this is the case is to use Docker, and so a sufficient `Dockerfile` is provided.
+The program uses Selenium webdriver, and assumes Chrome and [chromedriver](https://chromedriver.chromium.org/) are available, and working correctly.  One easy way to ensure this is the case is to use Docker, and a sufficient `Dockerfile` is provided.
 
 ## Using the Library with Docker
 

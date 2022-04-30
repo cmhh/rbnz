@@ -1,0 +1,9 @@
+.bsp
+.metals
+.vscode
+data
+output
+schemaspy
+project/project
+**/target
+.env

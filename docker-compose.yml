@@ -1,0 +1,15 @@
+version: "3.8"
+services:
+  rbnz:
+    image: rbnz
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    user: "${UID}:${GID}"
+    ports:
+      - 9001:9001
+    volumes:
+      - ./rbnz.db:/rbnz.db
+    tty: true
+    command: |
+      org.cmhh.Service rbnz.db

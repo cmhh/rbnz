@@ -1,6 +1,6 @@
 # Create a Database and Data Service of RBNZ Statistics
 
-Data on the ![Reserve Bank of New Zealand](https://www.rbnz.govt.nz/statistics) can be a little awkward to source and use.  First, all data is stored in Excel spreasheets which aren't directly machine readable.  But even then the data isn't easily used because the files themselves, due to the way they're hosted, cannot be directly downloaded easily in tools such as R or Python.  For example, the following R command will fail outright (as will `curl` and `wget`):
+Data on the [Reserve Bank of New Zealand](https://www.rbnz.govt.nz/statistics) can be a little awkward to source and use.  First, all data is stored in Excel spreasheets which aren't directly machine readable.  But even then the data isn't easily used because the files themselves, due to the way they're hosted, cannot be directly downloaded easily in tools such as R or Python.  For example, the following R command will fail outright (as will `curl` and `wget`):
 
 ```r
 download.file(

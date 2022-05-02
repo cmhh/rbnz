@@ -146,7 +146,7 @@ object rbnz {
       loop(5, Vector.empty)
     }
 
-    (0 until ids.size).map(i => {
+    val res = (0 until ids.size).map(i => {
       val obs = (0 until dates.size).map(j => {
         if (ws.getRow(j + 5) == null) (dates(j), None)
         else {
@@ -157,6 +157,10 @@ object rbnz {
       }).toVector
       (ids(i) -> Series(obs))
     }).toMap
+
+    wb.close()
+    excel.close()
+    res
   }
 
   /**
@@ -188,8 +192,12 @@ object rbnz {
       }
     }
 
-    loop(1, Vector.empty)
+    val res = loop(1, Vector.empty)
       .map(x => (x.seriesId -> x))
       .toMap
+
+    wb.close()
+    excel.close()
+    res
   }
 }

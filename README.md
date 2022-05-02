@@ -202,3 +202,35 @@ plot(
 ```
 
 ![](img/twi.png)
+
+Of course, it is easy enough to use the SQLite database directly from most analytical tools.  For R:
+
+```r
+library(RSQLite)
+library(ggplot2)
+
+conn <- DBI::dbConnect(
+  RSQLite::SQLite(), 
+  "~/Projects/rbnz/output/rbnz.db"
+)
+
+twi <- DBI::dbGetQuery(
+  conn, 
+  "select * from series where id = 'EXRT.DS41.NZB17'"
+)
+
+twi_def <- DBI::dbGetQuery(
+  conn,
+  "select * from series_definition where id = 'EXRT.DS41.NZB17'"
+)
+
+DBI::dbDisconnect(conn)
+
+ggplot(data = twi, aes(x = as.Date(date), y = value)) +
+  geom_line() +
+  ggtitle(sprintf("%s, %s", twi_def$group, twi_def$name)) +
+  xlab("date") +
+  ylab(twi_def$unit)
+```
+
+![](img/twi2.png)

@@ -1,5 +1,7 @@
 # Create a Database and Data Service of RBNZ Statistics
 
+**n.b.** I was unaware of the website [terms of service](https://www.rbnz.govt.nz/robots-botnets-and-scrapers-terms-of-service) when I posted this.  I have modified the code to pause for 60 seconds between each file, which means **it will take 2 hours to download 8MBs worth of Excel files!**.  You'll also need to email the RBNZ to get permission before running this code.  In most cases it will be faster to download the files by hand--the program will not re-download files if they already exist.
+
 Data on the [Reserve Bank of New Zealand](https://www.rbnz.govt.nz/statistics) website can be a little awkward to source and use.  First, all data is stored in Excel spreasheets which aren't directly machine readable.  But even then, the data isn't easily used because the files themselves, due to the way they're hosted, cannot be directly downloaded in tools such as R or Python.  For example, the following R command will fail outright (as will `curl` and `wget`):
 
 ```r

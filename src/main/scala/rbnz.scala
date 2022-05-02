@@ -97,7 +97,7 @@ object rbnz {
         if (!f.exists) {
           println(s"${y._2}...")
           driver.get(y._2)
-          Thread.sleep(5000)
+          Thread.sleep(60000) // To satisfy RBNZ terms of service.
         } 
       })
     })

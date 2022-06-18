@@ -114,7 +114,7 @@ object db {
       val defs_query = s"""
         insert into series_definition values (
           '${esc(definition.group)}',
-          '$id',
+          '${id.toUpperCase}',
           '${esc(definition.seriesName)}',
           '${definition.unit}',
           '$freq',
@@ -128,8 +128,8 @@ object db {
 
     series.data.foreach(obs => {
       val query = obs._2 match {
-        case None => s"""insert into series values ('$id', '${obs._1.toString}', NULL)"""
-        case Some(v) => s"""insert into series values ('$id', '${obs._1.toString}', $v)"""
+        case None => s"""insert into series values ('${id.toUpperCase}', '${obs._1.toString}', NULL)"""
+        case Some(v) => s"""insert into series values ('${id.toUpperCase}', '${obs._1.toString}', $v)"""
       }
       stmt.execute(query)
     })

@@ -6,7 +6,7 @@ lazy val root = (project in file(".")).
       version      := "0.1.0"
     )),
 
-    name := "infoshare",
+    name := "rbnz",
     
     libraryDependencies ++= Seq(
       "org.seleniumhq.selenium" % "selenium-java" % "3.141.59",

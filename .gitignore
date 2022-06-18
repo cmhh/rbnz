@@ -2,8 +2,10 @@
 .metals
 .vscode
 data
+data.bckup
 output
 schemaspy
 project/project
 **/target
 .env
+chromedriver*

@@ -18,18 +18,17 @@ import org.apache.poi.xssf.usermodel.{XSSFWorkbook, XSSFSheet, XSSFRow, XSSFCell
 object rbnz {
   private def processRow(row: WebElement): (String, String, List[(String, String)]) = {
     val code = row
-      .findElement(By.cssSelector(".rbnz-webtable-tablecode strong"))
+      .findElement(By.cssSelector(":nth-child(3)"))
       .getText()
+      .toUpperCase
 
     val desc = row
-      .findElements(By.cssSelector(".col-sm-12.col-md-6"))
-      .get(0)
-      .findElement(By.tagName("a"))
+      .findElement(By.cssSelector(":nth-child(1)"))
       .getText()
 
     val links = row
-      .findElements(By.cssSelector(".col-sm-12.col-md-6"))
-      .get(1)
+      .findElements(By.cssSelector(":nth-child(4)"))
+      .get(0)
       .findElements(By.tagName("a"))
       .asScala
       .map(x => (x.getText(), x.getAttribute("href")))
@@ -54,50 +53,27 @@ object rbnz {
    * @return object describing each discovered link, including path to downloaded file
    */
   def download(workdir: String): List[(String, String, List[(String, String, String)])] = {
-    val wrk = new File(workdir)
-    val options: ChromeOptions = new ChromeOptions()
-    options.addArguments("--headless")
-    options.addArguments("--no-sandbox")
-    options.addArguments("--disable-extensions")
-    options.addArguments("--disable-blink-features=AutomationControlled")
-    options.addArguments("user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36")
-    options.setExperimentalOption("excludeSwitches", Array("enable-automation"))
-    val prefs = new java.util.HashMap[String, Any]()
-    prefs.put("download.prompt_for_download", false)
-    prefs.put("download.default_directory", wrk.getAbsolutePath())
+    val driver = browser.getDriver(workdir)
 
-    options
-      .setExperimentalOption(
-        "prefs", 
-        prefs
-      )
+    driver.get("https://www.rbnz.govt.nz/statistics/series/data-file-index-page")
 
-    val driver: ChromeDriver = new ChromeDriver(options)
-
-    driver.get("https://www.rbnz.govt.nz/statistics/")
-    driver.manage().timeouts().implicitlyWait (10, TimeUnit.SECONDS)
-
-    // ensure window is wide enough that table rows are displayed in full
-    driver.manage().window().maximize()
-
-    // expand all panels 
-    driver.findElementById("toggleAccordion").click()
+    val rows = driver
+      .findElementsByCssSelector(".table-wrapper tbody > tr")
+      .asScala
 
     // get all the links
-    val links = driver
-      .findElementsByCssSelector(".panel-body  div.col-xs-12.flushed")
-      .asScala
+    val links = rows
       .map(row => processRow(row))
       .toList
 
     //download all the links
     links.foreach(x => {
       x._3.foreach(y => {
-        val f = new File(s"$wrk/${y._2.split('?')(0).split('/').last}")
+        val f = new File(s"$workdir/${y._2.split('?')(0).split('/').last}")
         if (!f.exists) {
           println(s"${y._2}...")
           driver.get(y._2)
-          Thread.sleep(60000) // To satisfy RBNZ terms of service.
+          Thread.sleep(1000) // To satisfy RBNZ terms of service.
         } 
       })
     })
@@ -129,7 +105,7 @@ object rbnz {
     val ids = {
       def loop(row: XSSFRow, pos: Int, accum: Vector[String]): Vector[String] = {
         if (row.getCell(pos) == null) accum // i feel dirty and i need a shower
-        else loop(row, pos + 1, accum :+ row.getCell(pos).getStringCellValue())
+        else loop(row, pos + 1, accum :+ row.getCell(pos).getStringCellValue().toUpperCase)
       }
       loop(ws.getRow(4), 1, Vector.empty)
     }
@@ -159,7 +135,7 @@ object rbnz {
     }).toMap
 
     wb.close()
-    excel.close()
+    excelFile.close()
     res
   }
 
@@ -181,7 +157,7 @@ object rbnz {
 
         val seriesDef = SeriesDefinition(
           row.getCell(0).toString, row.getCell(1).toString, 
-          row.getCell(2).toString, row.getCell(3).toString,
+          row.getCell(2).toString.toUpperCase, row.getCell(3).toString,
           row.getCell(4) match {
             case null => None
             case x => Some(x.toString)
@@ -197,7 +173,7 @@ object rbnz {
       .toMap
 
     wb.close()
-    excel.close()
+    excelFile.close()
     res
   }
 }

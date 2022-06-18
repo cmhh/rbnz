@@ -1,28 +1,28 @@
-# Create a Database and Data Service of RBNZ Statistics
+# Create a Database and Data Service Containing RBNZ Statistics
 
-**n.b.** I was unaware of the website [terms of service](https://www.rbnz.govt.nz/robots-botnets-and-scrapers-terms-of-service) when I posted this.  I have modified the code to pause for 60 seconds between each file, which means **it will take 2 hours to download 8MBs worth of Excel files!**.  You'll also need to email the RBNZ to get permission before running this code.  In most cases it will be faster to download the files by hand--the program will not re-download files if they already exist.
-
-Data on the [Reserve Bank of New Zealand](https://www.rbnz.govt.nz/statistics) website can be a little awkward to source and use.  First, all data is stored in Excel spreasheets which aren't directly machine readable.  But even then, the data isn't easily used because the files themselves, due to the way they're hosted, cannot be directly downloaded in tools such as R or Python.  For example, the following R command will fail outright (as will `curl` and `wget`):
+Data on the [Reserve Bank of New Zealand](https://www.rbnz.govt.nz/statistics) website can be a little awkward to source and use, painfully so for those who wish to automate the process.  First, all data is stored in Excel spreasheets which aren't directly machine readable.  But even then, the data isn't easily used because the files themselves, due to the way they're hosted, cannot be directly downloaded in tools such as R or Python, or common clients such as `curl` and `wget`.  For example, the following R command will fail outright:
 
 ```r
 download.file(
-  "https://www.rbnz.govt.nz/-/media/ReserveBank/Files/Statistics/tables/b1/hb1-daily.xlsx?revision=1ad7d513-7a05-469a-891a-068829a9661a",
-  "hb1-daily.xlsx
+  "https://www.rbnz.govt.nz/-/media/project/sites/rbnz/files/statistics/series/b/b1/hb1-daily.xlsx",
+  "hb1-daily.xlsx"
 )
 ```
 
+On top of this, these files are also subject to some pretty severe [terms of use](https://www.rbnz.govt.nz/about-our-site/terms-of-use).  Users are required to get written permission for any automation, and even then must not perform more than 1 GET per minute!  There are 115 files listed on the website, totalling 8MB all up.  **These terms mean users are required to take 2 hours to download 8MB of data**!  The Reserve Bank could simplify things for their users considerably simply by placing all these files in a single zip file and making it available via a single stable link that could be fetched via common clients such as wget and cURL... Azure BLOB storage, and S3 bucket... anything, really.  But in lieu of that...
+
 This repo includes a simple(-ish) Scala library which has entry-points which:
 
-* download all Excel files listed on the [RBNZ statistics page](https://www.rbnz.govt.nz/statistics)
-* import most Excel files and output as a SQLite database
+* download all Excel files listed on the [Statistical series data files page](https://www.rbnz.govt.nz/statistics/series/data-file-index-page)
+* import _most_ Excel files and output as a SQLite database
 * run a basic data service on top of the resulting SQLite database.
 
-Note that Excel files will successfully import if they:
+Excel files will successfully import if they:
 
 * have a tab named `Data`
 * have a tab named `Series Definitions`
 * data in `Data` tab must start in row 6, with series IDs in row 5
-* `Series Definitions` tab must have 5 columns with header row
+* `Series Definitions` tab must have 5 columns with header row.
 
 The resulting database is simple, with the following schema:
 
@@ -92,6 +92,12 @@ docker run -td --rm \
   -v ${PWD}/output:/output \
   -p 9001:9001 \
   rbnz org.cmhh.Service output/rbnz.db
+```
+
+or, just:
+
+```bash
+docker compose up
 ```
 
 The data service is simple, with just two end-points:

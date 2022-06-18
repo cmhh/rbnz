@@ -5,7 +5,7 @@ import java.io.File
 /**
  * Download Excel spreadsheets for RBNZ website and store locally
  */
-object DownladData extends App {
+object DownloadData extends App {
   if (args.size == 0) {
     println("Usage: java -jar rbnz.jar org.cmhh.DownloadData <path>.")
   } else {

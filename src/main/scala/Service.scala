@@ -47,7 +47,8 @@ trait CORSHandler{
 object Service extends App with CORSHandler {  
   implicit val system = ActorSystem("rbnz")
   implicit val executionContext = system.dispatcher
-  private val conn = db.connect(args(0))
+  // private val conn = db.connect(args(0))
+  private val conn = db.copyToTempDB(args(0))
 
   object routes {
     val version = path("version") {

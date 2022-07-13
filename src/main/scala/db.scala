@@ -41,6 +41,21 @@ object db {
   }
 
   /**
+   * Copy a SQLite database into a memory and return connection.
+   *
+   * @param path path to SQLite database
+   * @return Connection
+   */
+  def copyToTempDB(path: String): Connection = {
+    Class.forName("org.sqlite.JDBC")
+    val conn = DriverManager.getConnection(s"jdbc:sqlite:")
+    val stmnt = conn.createStatement()
+    stmnt.executeUpdate(s"restore from ${new File(path).getAbsolutePath()}")
+    stmnt.close()
+    conn
+  }
+
+  /**
    * Create table 'series' if it doesn't exist.
    * 
    * @param conn database connection

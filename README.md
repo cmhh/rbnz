@@ -59,7 +59,7 @@ docker build -t rbnz .
 
 ### Download Data
 
-To download all the Excel files to a local directory:
+To download all the Excel files to a local directory (make sure you create `${PWD}/data` first, and that _you_ own it, or you're going to have a bad time :)):
 
 ```bash
 docker run --rm \

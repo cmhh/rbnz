@@ -62,6 +62,8 @@ docker build -t rbnz .
 To download all the Excel files to a local directory (make sure you create `${PWD}/data` first, and that _you_ own it, or you're going to have a bad time :)):
 
 ```bash
+mkdir data
+
 docker run --rm \
   -u $(id -u):$(id -g) \
   -v ${PWD}/data:/data rbnz \
@@ -75,6 +77,8 @@ At the time this was written, this was roughly 120 files, totalling only 9.5 MB,
 We can create a SQLite database as follows:
 
 ```bash
+mkdir output 
+
 docker run --rm \
   -u $(id -u):$(id -g) \
   -v ${PWD}/data:/data -v ${PWD}/output:/output \

@@ -6,7 +6,12 @@ import java.time.temporal.ChronoUnit
 /**
  * Basic time series representation.
  */
-case class Series(data: Vector[Obs]) {
+case class Series(private val data$: Vector[Obs]) {
+  val data: Vector[Obs] = data$
+    .groupBy(_._1)
+    .map(x => x._2(0))
+    .toVector.sortBy(_._1)
+
   /**
    * Ordered dates.
    */
@@ -16,7 +21,7 @@ case class Series(data: Vector[Obs]) {
    * Time series frequency
    */
   lazy val freq: frequency.FREQUENCY = {
-    val d = dates.sorted
+    val d = dates.sorted.distinct
     val e = d.drop(1).zip(d.dropRight(1)).map(x => ChronoUnit.DAYS.between(x._2, x._1))
     val f = e.sum / e.size
 

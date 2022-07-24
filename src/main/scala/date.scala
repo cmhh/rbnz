@@ -29,6 +29,12 @@ object date {
     LocalDate.of(y.toInt, month(m), d.toInt)
   }
 
+  private def parse2(dte: String): LocalDate = {
+    val pattern = "^([a-zA-Z]{3}) (\\d{4})$".r
+    val pattern(m, y) = dte
+    LocalDate.of(y.toInt, month(m), 1).plusMonths(1).minusDays(1)
+  }
+
   /**
    * Convert date string to LocalDate
    * 
@@ -37,6 +43,7 @@ object date {
    */
   def parse(dte: String): LocalDate = {
     if (dte.matches("^(\\d{2})-([a-zA-Z]{3})-(\\d{4})$")) parse1(dte)
+    else if (dte.matches("^([a-zA-Z]{3}) (\\d{4})$")) parse2(dte)
     else sys.error(s"Invalid date format ($dte).")
   }
 }

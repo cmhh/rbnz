@@ -116,6 +116,7 @@ object rbnz {
         else {
           val c = ws.getRow(pos).getCell(0)
           if (c == null) accum
+          else if (c.toString.trim() == "") accum
           else loop(pos + 1, accum :+ date.parse(c.toString))
         }
       }
@@ -128,7 +129,18 @@ object rbnz {
         else {
           val c = ws.getRow(j + 5).getCell(i + 1)
           if (c == null) (dates(j), None)
-          else (dates(j), Some(c.getNumericCellValue()))
+          else if (c.toString().trim() == "-") (dates(j), None)
+          else {
+            c.getCellType() match {
+              case CellType.NUMERIC => (dates(j), Some(c.getNumericCellValue()))
+              case _ => {
+                Try {c.toString.trim.toDouble} match {
+                  case Success(x) => (dates(j), Some(x))
+                  case Failure(e) => (dates(j), None)
+                }
+              }
+            }
+          }
         }
       }).toVector
       (ids(i) -> Series(obs))
@@ -152,12 +164,18 @@ object rbnz {
 
     def loop(pos: Int, accum: Vector[SeriesDefinition]): Vector[SeriesDefinition] = {
       if (ws.getRow(pos) == null) accum 
+      else if (ws.getRow(pos).getCell(0) == null) accum
+      else if (ws.getRow(pos).getCell(0).toString.trim() == "") accum
       else {
-        var row = ws.getRow(pos)
+        val row = ws.getRow(pos)
 
         val seriesDef = SeriesDefinition(
           row.getCell(0).toString, row.getCell(1).toString, 
-          row.getCell(2).toString.toUpperCase, row.getCell(3).toString,
+          row.getCell(2).toString.toUpperCase, 
+          row.getCell(3) match {
+            case null => None
+            case x => Some(x.toString)
+          },
           row.getCell(4) match {
             case null => None
             case x => Some(x.toString)

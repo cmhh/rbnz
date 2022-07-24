@@ -120,6 +120,11 @@ object db {
     val id = definition.seriesId
     val freq = series.freq.toString
 
+    val unitStr = definition.unit match {
+      case None => "NULL"
+      case Some(u) => s"'${esc(u)}'"
+    }
+
     val noteStr = definition.note match {
       case None => "NULL"
       case Some(n) => s"'${esc(n)}'"
@@ -130,7 +135,7 @@ object db {
         insert into series_definition values (
           '${esc(definition.group)}',
           '${id.toUpperCase}',
-          '${esc(definition.seriesName)}',
+          $unitStr,
           '${definition.unit}',
           '$freq',
           $noteStr

@@ -2,21 +2,22 @@ lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       organization := "org.cmhh",
-      scalaVersion := "2.13.8",
-      version      := "0.2.0"
+      scalaVersion := "2.13.12",
+      version      := "0.4.0"
     )),
 
     name := "rbnz",
     
     libraryDependencies ++= Seq(
-      "org.seleniumhq.selenium" % "selenium-java" % "3.141.59",
-      "org.seleniumhq.selenium" % "selenium-chrome-driver" % "3.141.59",
-      "org.apache.poi" % "poi" % "5.2.2",
-      "org.apache.poi" % "poi-ooxml" % "5.2.2",
-      "com.typesafe.akka" %% "akka-actor" % "2.6.19",
-      "com.typesafe.akka" %% "akka-http" % "10.2.9",
-      "com.typesafe.akka" %% "akka-stream" % "2.6.19",
-      "org.xerial" % "sqlite-jdbc" % "3.36.0.3"
+      "org.seleniumhq.selenium" % "selenium-java" % "3.141.59", // "3.141.59" "4.18.1"
+      "org.seleniumhq.selenium" % "selenium-chrome-driver" % "3.141.59", // "3.141.59" "4.18.1"
+      "org.apache.poi" % "poi" % "5.2.5",
+      "org.apache.poi" % "poi-ooxml" % "5.2.5",
+      "com.typesafe.akka" %% "akka-actor" % "2.8.5",
+      "com.typesafe.akka" %% "akka-http" % "10.5.3",
+      "com.typesafe.akka" %% "akka-stream" % "2.8.5",
+      "org.xerial" % "sqlite-jdbc" % "3.45.1.0",
+      "org.rogach" %% "scallop" % "5.0.1"
     ),
 
     scalacOptions += "-deprecation",

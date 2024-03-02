@@ -1,11 +1,13 @@
 .bsp
 .metals
 .vscode
-data
-data.bckup
+.cache
+downloads
 output
+build
 schemaspy
-project/project
+**/project
 **/target
 .env
 chromedriver*
+README.md.bckup

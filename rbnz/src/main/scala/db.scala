@@ -5,7 +5,7 @@ import java.sql.{Connection, DatabaseMetaData, DriverManager, ResultSet}
 import scala.util.{Try, Success, Failure}
 
 /**
- * Functions for creating and working with SQLite datbase
+ * Functions for creating and working with SQLite database
  */
 object db {
   private def esc(str: String): String = str.replaceAll("'", "''")
@@ -135,8 +135,8 @@ object db {
         insert into series_definition values (
           '${esc(definition.group)}',
           '${id.toUpperCase}',
+          '${esc(definition.seriesName)}',
           $unitStr,
-          '${definition.unit}',
           '$freq',
           $noteStr
         )

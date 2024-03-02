@@ -53,12 +53,13 @@ object rbnz {
    * @return object describing each discovered link, including path to downloaded file
    */
   def download(workdir: String): List[(String, String, List[(String, String, String)])] = {
-    val driver = browser.getDriver(workdir)
+    val d1 = browser.getDriver(workdir)
+    val d2 = browser.getDriver(workdir)
 
-    driver.get("https://www.rbnz.govt.nz/statistics/series/data-file-index-page")
+    d1.get("https://www.rbnz.govt.nz/statistics/series/data-file-index-page")
 
-    val rows = driver
-      .findElementsByCssSelector(".table-wrapper tbody > tr")
+    val rows = d1
+      .findElements(By.cssSelector(".table-wrapper tbody > tr"))
       .asScala
 
     // get all the links
@@ -72,13 +73,14 @@ object rbnz {
         val f = new File(s"$workdir/${y._2.split('?')(0).split('/').last}")
         if (!f.exists) {
           println(s"${y._2}...")
-          driver.get(y._2)
-          Thread.sleep(60000) // To satisfy RBNZ terms of service.
+          d2.get(y._2)
+          // Thread.sleep(60000) // To satisfy RBNZ terms of service.
         } 
       })
     })
 
-    driver.close()
+    d1.close()
+    d2.close()
 
     links.map(l => {
       val xs = l._3
@@ -163,14 +165,14 @@ object rbnz {
     val ws: XSSFSheet = wb.getSheet("Series Definitions")
 
     def loop(pos: Int, accum: Vector[SeriesDefinition]): Vector[SeriesDefinition] = {
-      if (ws.getRow(pos) == null) accum 
-      else if (ws.getRow(pos).getCell(0) == null) accum
-      else if (ws.getRow(pos).getCell(0).toString.trim() == "") accum
+      val row = ws.getRow(pos)
+      if (row == null) accum 
+      else if (row.getCell(0) == null) accum
+      else if (row.getCell(0).toString.trim() == "") accum
       else {
-        val row = ws.getRow(pos)
-
         val seriesDef = SeriesDefinition(
-          row.getCell(0).toString, row.getCell(1).toString, 
+          row.getCell(0).toString, 
+          row.getCell(1).toString, 
           row.getCell(2).toString.toUpperCase, 
           row.getCell(3) match {
             case null => None

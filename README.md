@@ -1,15 +1,6 @@
 # Create a Database and Data Service Containing RBNZ Statistics
 
-Data on the [Reserve Bank of New Zealand](https://www.rbnz.govt.nz/statistics) website can be a little awkward to source and use, painfully so for those who wish to automate the process.  First, all data is stored in Excel spreasheets which aren't directly machine readable.  But even then, the data isn't easily used because the files themselves, due to the way they're hosted, cannot be directly downloaded in tools such as R or Python, or common clients such as `curl` and `wget`.  For example, the following R command will fail outright:
-
-```r
-download.file(
-  "https://www.rbnz.govt.nz/-/media/project/sites/rbnz/files/statistics/series/b/b1/hb1-daily.xlsx",
-  "hb1-daily.xlsx"
-)
-```
-
-On top of this, these files are also subject to some pretty severe [terms of use](https://www.rbnz.govt.nz/about-our-site/terms-of-use).  Users are required to get written permission for any automation, and even then must not perform more than 1 GET per minute!  There are 115 files listed on the website, totalling 8MB all up.  **These terms mean users are required to take 2 hours to download 8MB of data**!  The Reserve Bank could simplify things for their users considerably simply by placing all these files in a single zip file and making it available via a single stable link that could be fetched via common clients such as wget and cURL... Azure BLOB storage, and S3 bucket... anything, really.  But in lieu of that...
+**Note** it is against the Reserve Bank's [terms of use](https://www.rbnz.govt.nz/about-our-site/terms-of-use) to use an automated agent without permission.
 
 This repo includes a simple(-ish) Scala library which has entry-points which:
 
@@ -34,77 +25,89 @@ The resulting database is simple, with the following schema:
 It is assumed users have [sbt](https://www.scala-sbt.org/).  All that is required to build the library is to run the following command:
 
 ```bash
+cd rbnz
 sbt assembly
 ```
 
 This will yield the following artefact:
 
 ```plaintext
-target/scala-2.13/rbnz.jar
+./rbnz/target/scala-2.13/rbnz.jar
 ```
 
 ## Selenium / Chrome / Chromedriver
 
-The program uses Selenium webdriver, and assumes Chrome and [chromedriver](https://chromedriver.chromium.org/) are available, and working correctly.  One easy way to ensure this is the case is to use Docker, and a sufficient `Dockerfile` is provided.
+The program uses Selenium webdriver, and assumes Chrome and [chromedriver](https://chromedriver.chromium.org/) are available, and working correctly.  One easy way to ensure this is the case is to use Docker, and a sufficient `Dockerfile` is provided.  See below.
 
-## Using the Library with Docker
+## Run
 
-Users first need to build the docker image:
+The jar file lets users do several things:
+
+* download all Excel files
+* create a SQLite database from downloaded Excel files
+* run a basic data service on top of the SQLite database
+
+To download Excel files:
 
 ```bash
-docker build -t rbnz .
+java -cp rbnz/target/scala-2.13/rbnz.jar \
+  org.cmhh.DownloadData \
+  --download-dir downloads 
 ```
 
-(Note that `sbt assembly` must have been run previously, so that `target/scala-2.13/rbnz.jar` exists.)
+To create a SQLite database:
+
+```bash
+java -cp rbnz/target/scala-2.13/rbnz.jar \
+  org.cmhh.CreateDatabase \
+  --download-dir downloads \
+  --database-path output/rbnz.sqlite 
+```
+
+Finally, to start a data service:
+
+```bash
+java -cp rbnz/target/scala-2.13/rbnz.jar \
+  org.cmhh.Service --database-path output/rbnz.sqlite
+```
+
+## Docker
+
+All of the above steps (building a jar, downloading data, creating a database, and running a service) can be done via Docker, and a docker compose setup is provided for each step.  **Note** that Docker containers will not typically run as root, and expect `GID` and `UID` environment variables to be set.  To create an appropriate `.env` file, run the `env.sh` script.
+
+### Build
+
+A basic docker compose setup is supplied which can be used to build `rbnz.jar`.  This is useful for those who do not have sbt or the JDK on their systems, and don't want to install either.  To create the `rbnz.jar`:
+
+```bash
+docker compose -f build_jar.yml up -d
+```
 
 ### Download Data
 
-To download all the Excel files to a local directory (make sure you create `${PWD}/data` first, and that _you_ own it, or you're going to have a bad time :)):
+To download data:
 
 ```bash
-mkdir data
-
-docker run --rm \
-  -u $(id -u):$(id -g) \
-  -v ${PWD}/data:/data rbnz \
-  org.cmhh.DownloadData data
+docker compose -f download.yml up -d
 ```
 
-At the time this was written, this was roughly 120 files, totalling only 9.5 MB, or 8.1MB zipped.  While this is a small amount of data, the download does pause for around 5 seconds between each file so as not to add any real pressure to the remote server.  This does mean the data can take a few minutes to download, however.
+### Create Database
 
-### Create Database 
-
-We can create a SQLite database as follows:
+To create a database:
 
 ```bash
-mkdir output 
-
-docker run --rm \
-  -u $(id -u):$(id -g) \
-  -v ${PWD}/data:/data -v ${PWD}/output:/output \
-  rbnz org.cmhh.CreateDatabase output/rbnz.db
+docker compose -f create_database up -d
 ```
 
-If files already exist in `${PWD}/data`, they will not be downloaded again.  To get updated files, either clear the folder, or mount a different, empty folder.
+### Run Service
 
-### Run Data Service
-
-Finally, to run the service:
+To run a data service:
 
 ```bash
-docker run -td --rm \
-  -v ${PWD}/output:/output \
-  -p 9001:9001 \
-  rbnz org.cmhh.Service output/rbnz.db
+docker compose -f service.yml up -d
 ```
 
-or, just:
-
-```bash
-docker compose up
-```
-
-The data service is simple, with just two end-points:
+The service will be running on port 9002.  The data service is simple, with just two end-points:
 
 * `/rbnz/definition` - list available series IDs
 * `/rbnz/series` - list all observations for requested series
@@ -113,7 +116,7 @@ Each end-point takes 3 arguments:
 
 * `id` - series ID, optional, repeating
 * `groupKeyword` - search for text in group name, optional, repeating
-* `nameKeywork` - search for text in name, optional, repeating.
+* `nameKeyword` - search for text in name, optional, repeating.
 
 For example, `GET`ting:
 
@@ -144,7 +147,7 @@ yields
 ]
 ```
  
-The service uses a single SQLite connection, though it would be easy enough to add some sort of connection pool, but is nevertheless reasonably fast.  For example:
+The service uses a single SQLite connection (though it would be easy enough to add some sort of connection pool) but is nevertheless reasonably fast.  For example:
 
 ```bash
 $ siege -t 10s -c 4 "http://localhost:9001/rbnz/series?id=EXRT.MR41.NZB17"

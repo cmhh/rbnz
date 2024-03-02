@@ -11,6 +11,14 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.ExceptionHandler
 import scala.io.StdIn
 import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContextExecutor
+
+import org.rogach.scallop._
+
+class ServiceConf(arguments: Seq[String]) extends ScallopConf(arguments) {
+  val dbPath = opt[String](name = "database-path", required = false, default = Some("output/rbnz.sqlite"))
+  verify()
+}
 
 /**
  * CORS handler... just in case.
@@ -45,10 +53,11 @@ trait CORSHandler{
  * Data service for RBNZ data in SQLite database.
  */
 object Service extends App with CORSHandler {  
-  implicit val system = ActorSystem("rbnz")
-  implicit val executionContext = system.dispatcher
-  // private val conn = db.connect(args(0))
-  private val conn = db.copyToTempDB(args(0))
+  val conf = new ServiceConf(args.toIndexedSeq)
+
+  implicit val system: ActorSystem = ActorSystem("rbnz")
+  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+  private val conn = db.copyToTempDB(conf.dbPath())
 
   object routes {
     val version = path("version") {

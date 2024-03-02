@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  rbnz:
+    image: rbnz
+    build:
+      context: ./
+      dockerfile: ./docker/rbnz/Dockerfile
+    user: "${UID}:${GID}"
+    volumes:
+      - ./rbnz/target/scala-2.13/rbnz.jar:/rbnz.jar
+      - ./downloads:/downloads
+    tty: true
+    command: |
+      org.cmhh.DownloadData -d downloads

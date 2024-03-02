@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  rbnz:
+    image: rbnz
+    build:
+      context: ./
+      dockerfile: ./docker/rbnz/Dockerfile
+    user: "${UID}:${GID}"
+    ports:
+      - 9002:9001
+    volumes:
+      - ./rbnz/target/scala-2.13/rbnz.jar:/rbnz.jar
+      - ./output/rbnz.sqlite:/rbnz.sqlite
+    tty: true
+    command: |
+      org.cmhh.Service --database-path rbnz.sqlite

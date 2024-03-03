@@ -199,19 +199,20 @@ object db {
    * @param id list of series IDs
    * @param groupKeyword list of keywords to search for in "group"
    * @param nameKeyword list of keywords to search for in "name"
+   * @param frequency optional frequency--one of 'M', 'D', 'A'
    * @return vector containing matching series definitions
    */
   def getDefinition(
     conn: Connection, id: List[String], 
-    groupKeyword: List[String], nameKeyword: List[String]
+    groupKeyword: List[String], nameKeyword: List[String], frequency: Option[String]
   ): Vector[(String, String, String, String, String, Option[String])] = {
     val stmt = conn.createStatement()
 
     val q0 = "select * from series_definition"
 
     val q1 = if (id.size == 0) q0 else {
-      val where = id.map(x => s"'$x'").mkString(", ")
-      s"$q0 where id in ($where)"
+      val where = id.map(x => s""""id" like '%$x%'""").mkString(" and ")
+      s"$q0 where $where"
     }      
 
     val q2 = if (groupKeyword.size == 0) q1 else {
@@ -219,12 +220,18 @@ object db {
       s"select * from ($q1) a where $like"
     }   
 
-    val q3 = if (nameKeyword.size == 0) q1 else {
+    val q3 = if (nameKeyword.size == 0) q2 else {
       val like = nameKeyword.map(kw => s"""name like "%$kw%"""").mkString(" and ")
       s"select * from ($q2) b where $like"
     }
 
-    val rs = stmt.executeQuery(q3)
+    val q4 = frequency match {
+      case None => q3
+      case Some(f) => 
+        s"""select * from ($q3) c where "frequency" = '$f'"""
+    }
+
+    val rs = stmt.executeQuery(q4)
 
     def loop(
       rs: ResultSet, accum: Vector[(String, String, String, String, String, Option[String])] 
@@ -248,9 +255,12 @@ object db {
    * 
    * @param conn database connection
    * @param id list of series IDs
+   * @param minDate minimum date for result set
    * @return vector containing matching series
    */
-  def getSeries(conn: Connection, id: List[String]): Vector[(String, String, Option[Double])] = {
+  def getSeries(
+    conn: Connection, id: List[String], minDate: Option[String]
+  ): Vector[(String, String, Option[Double])] = {
     val stmt = conn.createStatement()
 
     val q0 = "select * from series"
@@ -260,7 +270,13 @@ object db {
       s"$q0 where id in ($where) order by id, date"
     }
 
-    val rs = stmt.executeQuery(q1)
+    val q2 = minDate match {
+      case None => q1
+      case Some(dte) => 
+        s"""select * from ($q1) a where "date" >= '$dte'"""
+    }
+
+    val rs = stmt.executeQuery(q2)
 
     def loop(rs: ResultSet, accum: Vector[(String, String, Option[Double])]): Vector[(String, String, Option[Double])] = {
       if (!rs.next()) accum
@@ -285,13 +301,14 @@ object db {
    * @param id list of series IDs
    * @param groupKeyword list of keywords to search for in "group"
    * @param nameKeyword list of keywords to search for in "name"
+   * @param frequency optional frequency--one of 'M', 'D', 'A'
    * @return JSON string
    */
   def getDefinitionJson(
     conn: Connection, id: List[String], 
-    groupKeyword: List[String], nameKeyword: List[String]
+    groupKeyword: List[String], nameKeyword: List[String], frequency: Option[String]
   ): String = {
-    val definitions = getDefinition(conn, id, groupKeyword, nameKeyword)
+    val definitions = getDefinition(conn, id, groupKeyword, nameKeyword, frequency)
     val objects = definitions.map(x => {      
       val noteStr = x._6 match {
         case None => "null"
@@ -311,15 +328,18 @@ object db {
    * @param id list of series IDs
    * @param groupKeyword list of keywords to search for in definition "group"
    * @param nameKeyword list of keywords to search for in definition "name"
+   * @param frequency optional frequency--one of 'M', 'D', 'A'
+   * @param minDate minimum date for result set
    * @return JSON string
    */
   def getSeriesJson(
-    conn: Connection, id: List[String], 
-    groupKeyword: List[String], nameKeyword: List[String]
+    conn: Connection, id: List[String],
+    groupKeyword: List[String], nameKeyword: List[String], 
+    frequency: Option[String], minDate: Option[String]
   ): String = {
-    val definitions = getDefinition(conn, id, groupKeyword, nameKeyword).take(100)
+    val definitions = getDefinition(conn, id, groupKeyword, nameKeyword, frequency)//.take(100)
     val ids = definitions.map(x => x._2).toList
-    val series = getSeries(conn, ids)
+    val series = getSeries(conn, ids, minDate)
 
     "[" + definitions.map(x => {
       val s = series.filter(y => y._1 == x._2)

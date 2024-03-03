@@ -117,11 +117,13 @@ Each end-point takes 3 arguments:
 * `id` - series ID, optional, repeating
 * `groupKeyword` - search for text in group name, optional, repeating
 * `nameKeyword` - search for text in name, optional, repeating.
+* `frequency` - series frequency--one of `D`, `M`, `A`
+* `minDate` - minimum date for result set
 
 For example, `GET`ting:
 
 ```plaintext
-http://localhost:9001/rbnz/definition?groupKeyword=Exchange&nameKeyword=European
+http://localhost:9002/rbnz/definition?groupKeyword=Exchange&nameKeyword=European
 ```
 
 yields
@@ -199,22 +201,38 @@ Users could then write wrappers in other languages.  For example, using R we can
 
 ```r
 library(jsonlite)
+library(dplyr)
+library(ggplot2)
 
-twi <- jsonlite::fromJSON(
-  "http://localhost:9001/rbnz/series?id=EXRT.DS41.NZB17", 
+exr <- jsonlite::fromJSON(
+  "http://localhost:9002/rbnz/series?groupKeyword=Exchange%20rates&minDate=2010-01-01&frequency=D",
   simplifyDataFrame = FALSE
-)
+) 
 
-plot(
-  twi[[1]]$date |> as.Date(), 
-  sapply(twi[[1]]$value, \(x) if (is.null(x)) NA else x), 
-  type = "l", 
-  xlab = "date", ylab = twi[[1]]$unit,
-  main = sprintf("%s, %s", twi[[1]]$group, twi[[1]]$name)
-)
+empty <- sapply(exr, \(x) length(x$date) == 0, USE.NAMES = FALSE)
+
+df <- lapply(exr[!empty], \(x) {
+  data.frame(
+    group = x$group,
+    id = x$id,
+    name = x$name,
+    date = as.Date(x$date),
+    unit = x$unit,
+    value = x$value
+  )
+}) |> (\(x) do.call('rbind', x))()
+
+ggplot(
+  data = df |> filter(unit %in% c("NZD/AUD", "NZD/USD", "NZD/EUR", "NZD/GBP")), 
+  aes(x = date, y = value, col = unit)
+) + 
+  geom_line() + 
+  xlab(element_blank()) + 
+  ylab("exchange rate") + 
+  labs(color=element_blank())
 ```
 
-![](img/twi.png)
+![](img/exr.svg)
 
 Of course, it is easy enough to use the SQLite database directly from most analytical tools.  For R:
 
@@ -224,17 +242,24 @@ library(ggplot2)
 
 conn <- DBI::dbConnect(
   RSQLite::SQLite(), 
-  "~/Projects/rbnz/output/rbnz.db"
+  "~/Projects/rbnz/output/rbnz.sqlite"
 )
 
 twi <- DBI::dbGetQuery(
   conn, 
-  "select * from series where id = 'EXRT.DS41.NZB17'"
+  "
+  select 
+    * 
+  from 
+    series 
+  where 
+    id = 'EXRT.DS41.NZB17' 
+    and \"date\" >= '2010-01-01'
+  "
 )
 
 twi_def <- DBI::dbGetQuery(
-  conn,
-  "select * from series_definition where id = 'EXRT.DS41.NZB17'"
+  conn, "select * from series_definition where id = 'EXRT.DS41.NZB17'"
 )
 
 DBI::dbDisconnect(conn)
@@ -242,8 +267,9 @@ DBI::dbDisconnect(conn)
 ggplot(data = twi, aes(x = as.Date(date), y = value)) +
   geom_line() +
   ggtitle(sprintf("%s, %s", twi_def$group, twi_def$name)) +
-  xlab("date") +
-  ylab(twi_def$unit)
+  xlab(element_blank()) +
+  ylab(twi_def$unit) +
+  labs(caption = "Source: Reserve Bank of New Zealand")
 ```
 
-![](img/twi2.png)
+![](img/twi.svg)

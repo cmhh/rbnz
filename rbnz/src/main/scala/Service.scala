@@ -16,7 +16,9 @@ import scala.concurrent.ExecutionContextExecutor
 import org.rogach.scallop._
 
 class ServiceConf(arguments: Seq[String]) extends ScallopConf(arguments) {
-  val dbPath = opt[String](name = "database-path", required = false, default = Some("output/rbnz.sqlite"))
+  val dbPath = opt[String](
+    name = "database-path", required = false, default = Some("output/rbnz.sqlite")
+  )
   verify()
 }
 
@@ -66,22 +68,34 @@ object Service extends App with CORSHandler {
 
     val definition = path("definition") {
       parameters(
-        "id".as[String].repeated, "groupKeyword".as[String].repeated, "nameKeyword".as[String].repeated
-      ){ (id, groupKeyword, nameKeyword) =>
+        "id".as[String].repeated, 
+        "groupKeyword".as[String].repeated, "nameKeyword".as[String].repeated, 
+        "frequency".optional
+      ){ (id, groupKeyword, nameKeyword, frequency) =>
         complete(HttpEntity(
           ContentTypes.`application/json`, 
-          db.getDefinitionJson(conn, id.toList, groupKeyword.toList, nameKeyword.toList)
+          db.getDefinitionJson(
+            conn, id.toList, 
+            groupKeyword.toList, nameKeyword.toList, 
+            frequency
+          )
         ))
       }
     }
     
     val series = path("series") {
       parameters(
-        "id".as[String].repeated, "groupKeyword".as[String].repeated, "nameKeyword".as[String].repeated
-      ){ (id, groupKeyword, nameKeyword)  =>
+        "id".as[String].repeated, 
+        "groupKeyword".as[String].repeated, "nameKeyword".as[String].repeated, 
+        "frequency".optional, "minDate".optional
+      ){ (id, groupKeyword, nameKeyword, frequency, minDate)  =>
         complete(HttpEntity(
           ContentTypes.`application/json`, 
-          db.getSeriesJson(conn, id.toList, groupKeyword.toList, nameKeyword.toList)
+          db.getSeriesJson(
+            conn, id.toList, 
+            groupKeyword.toList, nameKeyword.toList, 
+            frequency, minDate
+          )
         ))
       }
     }

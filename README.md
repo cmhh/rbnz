@@ -229,7 +229,8 @@ ggplot(
   geom_line() + 
   xlab(element_blank()) + 
   ylab("exchange rate") + 
-  labs(color=element_blank())
+  labs(color=element_blank()) +
+  theme(legend.position = "bottom")
 ```
 
 ![](img/exr.svg)
@@ -242,7 +243,7 @@ library(ggplot2)
 
 conn <- DBI::dbConnect(
   RSQLite::SQLite(), 
-  "~/Projects/rbnz/output/rbnz.sqlite"
+  "./output/rbnz.sqlite"
 )
 
 twi <- DBI::dbGetQuery(

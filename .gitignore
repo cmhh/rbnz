@@ -6,7 +6,7 @@ downloads
 output
 build
 schemaspy
-**/project
+rbnz/project
 **/target
 .env
 chromedriver*
